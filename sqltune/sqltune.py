@@ -17,12 +17,14 @@ class sqltune(object):
     db_user = ""
     db_pass = ""
     tns_alias = ""
+    cloud_config = ""
     sql_binary = ""
 
-    def __init__(self, l_db_user, l_db_pass, l_tns_alias):
+    def __init__(self, l_db_user, l_db_pass, l_tns_alias, l_cloud_config):
         self.db_user = l_db_user
         self.db_pass = l_db_pass
         self.tns_alias = l_tns_alias
+        self.cloud_config = l_cloud_config
         if sys.platform.startswith("win") :
             self.sql_binary = "sql.exe"
         else:
@@ -31,7 +33,10 @@ class sqltune(object):
         
     def tune(self):
         print( "using binary:" +self.sql_binary)
-        subprocess.call([self.sql_binary , self.db_user +"/"+self.db_pass+"@"+self.tns_alias , "@sql/awrrpt.sql"])
+        if self.cloud_config is None :
+            subprocess.call([self.sql_binary , self.db_user +"/"+self.db_pass+"@"+self.tns_alias , "@sql/awrrpt.sql"])
+        else :
+            subprocess.call([self.sql_binary , "-cloudconfig" , self.cloud_config,  self.db_user +"/"+self.db_pass+"@"+self.tns_alias , "@sql/awrrpt.sql"])
         list_of_files = glob.glob('*.html') # * means all if need specific format then *.csv
         latest_file = max(list_of_files, key=os.path.getctime)
         print( latest_file )
@@ -56,7 +61,10 @@ class sqltune(object):
             return None
         
     def processSQLID(self, l_sqlid):
-        subprocess.call([self.sql_binary,  self.db_user +"/"+self.db_pass+"@"+self.tns_alias , "@sql/sql_monitor.sql",l_sqlid])
+        if self.cloud_config is None :
+            subprocess.call([self.sql_binary,  self.db_user +"/"+self.db_pass+"@"+self.tns_alias , "@sql/sql_monitor.sql", l_sqlid])
+        else :
+            subprocess.call([self.sql_binary , "-cloudconfig" , self.cloud_config,  self.db_user +"/"+self.db_pass+"@"+self.tns_alias ,  "@sql/sql_monitor.sql", l_sqlid])
 
 # parser = argparse.ArgumentParser(description='SQLTuning')
 # parser.add_argument('--db_user', help="db_user")
@@ -64,4 +72,4 @@ class sqltune(object):
 # parser.add_argument('--tns_alias', help="tns_alias")
 # args  = parser.parse_args()
 # sqltune = sqltune(args.db_user, args.db_pass, args.tns_alias)
-sqltune = sqltune(os.environ.get('DB_MON_USR'), os.environ.get('DB_MON_PWD'), os.environ.get('DB_MON_URL'))
+sqltune = sqltune(os.environ.get('DB_MON_USR'), os.environ.get('DB_MON_PWD'), os.environ.get('DB_MON_URL'), os.environ.get('DB_MON_CLOUD_CONFIG'))
